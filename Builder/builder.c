@@ -79,15 +79,15 @@ BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSectio
     return resizedInput;
 }
 
-BYTE* processFile(FILE* fp, DWORD size) {
-    BYTE* inputFile = malloc(size);
+BYTE* processFile(FILE* fp, DWORD* size) {
+    BYTE* inputFile = malloc(*size);
     if (inputFile == 0) {
         fprintf(stderr, "Could not allocate memory for the input file\n");
         return NULL;
     }
 
-    size_t result = fread(inputFile, sizeof(char), size, fp);
-    if (result != size) {
+    size_t result = fread(inputFile, sizeof(char), *size, fp);
+    if (result != *size) {
         fprintf(stderr, "Failure!\n");
         return NULL;
     }
@@ -111,16 +111,16 @@ BYTE* processFile(FILE* fp, DWORD size) {
     return inputFile;
 }
 
-BYTE* compressAndEncrypt(BYTE* inputFile, size_t fileSize, size_t * returnCompressedSize) {
+BYTE* compressAndEncrypt(BYTE* inputFile, size_t* fileSize, size_t * returnCompressedSize) {
 
-    int max_size = lzav_compress_bound(fileSize);
+    int max_size = lzav_compress_bound(*fileSize);
     BYTE* compressed_buffer = malloc(max_size);
     if (compressed_buffer == NULL) {
         return NULL;
     }
     printf("[+] File compression started!\n");
 
-    int comp_len = lzav_compress_default(inputFile, compressed_buffer, fileSize, max_size);
+    int comp_len = lzav_compress_default(inputFile, compressed_buffer, *fileSize, max_size);
     printf("[+] Compression finished!\n");
     uint32_t key[4] = { 0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210 }; // 128 bit key
     encrypt_payload(compressed_buffer, comp_len, key);
@@ -256,14 +256,14 @@ int main(int argc, char* argv[]) {
     fileSize = ftell(inputfp);
     fseek(inputfp, 0, SEEK_SET);
 
-    BYTE* inputFile = processFile(inputfp, fileSize);
+    BYTE* inputFile = processFile(inputfp, &fileSize);
 
     if (inputFile == NULL) {
         return 1;
     }
     // fileSize contains size of input file
     size_t packed_size = 0;
-    BYTE* packedPayload = compressAndEncrypt(inputFile, fileSize, &packed_size);
+    BYTE* packedPayload = compressAndEncrypt(inputFile, &fileSize, &packed_size);
 
     if (packedPayload == NULL) {
         return 1;
