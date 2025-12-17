@@ -23,6 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="decrypt.h" />
+    <ClInclude Include="definitions.h" />
+    <ClInclude Include="encryptdebug.h" />
     <ClInclude Include="payload.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="tls.h" />

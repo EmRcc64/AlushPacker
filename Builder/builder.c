@@ -43,9 +43,9 @@ size_t determineWriteSize(LPVOID imageBase, size_t inputFileSize, DWORD packedSe
 
 BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSection, DWORD pSectionSize, size_t* writeSize) {
 
-    size_t writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
+    size_t calculatedSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
 
-    BYTE* resizedInput = malloc(writeSize);
+    BYTE* resizedInput = malloc(calculatedSize);
     if (resizedInput == NULL) {
         return NULL;
     }
@@ -76,6 +76,12 @@ BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSectio
     newSection->Characteristics = IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_CNT_INITIALIZED_DATA;
     ntHeaders->OptionalHeader.SizeOfImage = align_value(newSection->VirtualAddress + newSection->Misc.VirtualSize, sectionAlignment);
     memcpy((void*)((DWORD_PTR)imageBase + newSection->PointerToRawData), pSection, pSectionSize);
+    
+    // Set the output parameter
+    if (writeSize != NULL) {
+        *writeSize = calculatedSize;
+    }
+    
     return resizedInput;
 }
 
@@ -307,7 +313,7 @@ int main(int argc, char* argv[]) {
         precompiled_unpacker = precompiled_unpacker_x86;
     }
     size_t finalSize = 0;
-    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, finalSize);
+    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, &finalSize);
     outputfp = fopen(outputPath, "wb");
     if (!outputfp) {
         return 1;
