@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
     DWORD fileSize = 0;
 
     fseek(inputfp, 0, SEEK_END);
-    fileSize = ftell(inputfp);
+    fileSize = (DWORD)ftell(inputfp);
     fseek(inputfp, 0, SEEK_SET);
 
     BYTE* inputFile = processFile(inputfp, fileSize);
@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) {
     }
     // fileSize contains size of input file
     size_t packed_size = 0;
-    BYTE* packedPayload = compressAndEncrypt(inputFile, fileSize, &packed_size);
+    BYTE* packedPayload = compressAndEncrypt(inputFile, (size_t)fileSize, &packed_size);
 
     if (packedPayload == NULL) {
         return 1;
@@ -284,9 +284,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     DWORD packedSectionSize = (DWORD)(packed_size + sizeof(packed_section));
-    if (packedSection == NULL) {
-        return 1;
-    }
     if (lockFlag == TRUE) {
 
         packedSection->lockFlag = TRUE;
