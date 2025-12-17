@@ -269,14 +269,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    packed_section* packedSection = malloc(packed_size);
+    packed_section* packedSection = malloc(sizeof(packed_section) + packed_size);
     if (packedSection == NULL) {
         return 1;
     }
-    DWORD packedSectionSize = packedSection->packed_size + sizeof(packed_section);
-    if (packedSection == NULL) {
-        return 1;
-    }
+    DWORD packedSectionSize = sizeof(packed_section) + packed_size;
     if (lockFlag == TRUE) {
 
         packedSection->lockFlag = TRUE;
