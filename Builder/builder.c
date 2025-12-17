@@ -307,7 +307,7 @@ int main(int argc, char* argv[]) {
         precompiled_unpacker = precompiled_unpacker_x86;
     }
     size_t finalSize = 0;
-    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, finalSize);
+    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, &finalSize);
     outputfp = fopen(outputPath, "wb");
     if (!outputfp) {
         return 1;
