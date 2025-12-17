@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
                     lockFlag = 1;
 
-                    lockHash = hash(argv[i + 1]);
+                    lockHash = DJB2_hash((const unsigned char*)argv[i + 1], strlen(argv[i + 1]));
                     // let's convert it to a 128 bit key
                     for (int i = 0; i < 4; i++) {
 
