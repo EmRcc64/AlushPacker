@@ -256,14 +256,14 @@ int main(int argc, char* argv[]) {
     fileSize = ftell(inputfp);
     fseek(inputfp, 0, SEEK_SET);
 
-    BYTE* inputFile = processFile(inputfp, &fileSize);
+    BYTE* inputFile = processFile(inputfp, fileSize);
 
     if (inputFile == NULL) {
         return 1;
     }
     // fileSize contains size of input file
     size_t packed_size = 0;
-    BYTE* packedPayload = compressAndEncrypt(inputFile, &fileSize, &packed_size);
+    BYTE* packedPayload = compressAndEncrypt(inputFile, fileSize, &packed_size);
 
     if (packedPayload == NULL) {
         return 1;
