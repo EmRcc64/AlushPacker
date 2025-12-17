@@ -3,6 +3,7 @@
 #include <wininet.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "lzav.h"
 #include "encrypt.h"
 #include "stubs.h"
@@ -25,6 +26,10 @@ uint32_t DJB2_hash(const unsigned char* buf, size_t size) {
     return hash;
 }
 
+uint32_t hash(const char* input) {
+    return DJB2_hash((const unsigned char*)input, strlen(input));
+}
+
 size_t determineWriteSize(LPVOID imageBase, size_t inputFileSize, DWORD packedSectionSize) {
 
     IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)((DWORD_PTR)imageBase);
@@ -43,9 +48,9 @@ size_t determineWriteSize(LPVOID imageBase, size_t inputFileSize, DWORD packedSe
 
 BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSection, DWORD pSectionSize, size_t* writeSize) {
 
-    size_t writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
+    size_t calculatedSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
 
-    BYTE* resizedInput = malloc(writeSize);
+    BYTE* resizedInput = malloc(calculatedSize);
     if (resizedInput == NULL) {
         return NULL;
     }
@@ -76,6 +81,11 @@ BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSectio
     newSection->Characteristics = IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_CNT_INITIALIZED_DATA;
     ntHeaders->OptionalHeader.SizeOfImage = align_value(newSection->VirtualAddress + newSection->Misc.VirtualSize, sectionAlignment);
     memcpy((void*)((DWORD_PTR)imageBase + newSection->PointerToRawData), pSection, pSectionSize);
+
+    if (writeSize != NULL) {
+        *writeSize = calculatedSize;
+    }
+
     return resizedInput;
 }
 
@@ -253,30 +263,27 @@ int main(int argc, char* argv[]) {
     DWORD fileSize = 0;
 
     fseek(inputfp, 0, SEEK_END);
-    fileSize = ftell(inputfp);
+    fileSize = (DWORD)ftell(inputfp);
     fseek(inputfp, 0, SEEK_SET);
 
-    BYTE* inputFile = processFile(inputfp, &fileSize);
+    BYTE* inputFile = processFile(inputfp, fileSize);
 
     if (inputFile == NULL) {
         return 1;
     }
     // fileSize contains size of input file
     size_t packed_size = 0;
-    BYTE* packedPayload = compressAndEncrypt(inputFile, &fileSize, &packed_size);
+    BYTE* packedPayload = compressAndEncrypt(inputFile, (size_t)fileSize, &packed_size);
 
     if (packedPayload == NULL) {
         return 1;
     }
 
-    packed_section* packedSection = malloc(packed_size);
+    packed_section* packedSection = malloc(sizeof(packed_section) + packed_size);
     if (packedSection == NULL) {
         return 1;
     }
-    DWORD packedSectionSize = packedSection->packed_size + sizeof(packed_section);
-    if (packedSection == NULL) {
-        return 1;
-    }
+    DWORD packedSectionSize = (DWORD)(packed_size + sizeof(packed_section));
     if (lockFlag == TRUE) {
 
         packedSection->lockFlag = TRUE;
@@ -307,7 +314,7 @@ int main(int argc, char* argv[]) {
         precompiled_unpacker = precompiled_unpacker_x86;
     }
     size_t finalSize = 0;
-    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, finalSize);
+    BYTE* finalFile = addSectionToInputFile(precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, &finalSize);
     outputfp = fopen(outputPath, "wb");
     if (!outputfp) {
         return 1;
@@ -320,4 +327,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
