@@ -43,9 +43,9 @@ size_t determineWriteSize(LPVOID imageBase, size_t inputFileSize, DWORD packedSe
 
 BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSection, DWORD pSectionSize, size_t* writeSize) {
 
-    size_t writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
+    *writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
 
-    BYTE* resizedInput = malloc(writeSize);
+    BYTE* resizedInput = malloc(*writeSize);
     if (resizedInput == NULL) {
         return NULL;
     }
