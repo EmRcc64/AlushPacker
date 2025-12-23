@@ -43,9 +43,9 @@ size_t determineWriteSize(LPVOID imageBase, size_t inputFileSize, DWORD packedSe
 
 BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSection, DWORD pSectionSize, size_t* writeSize) {
 
-    size_t writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
+    *writeSize = determineWriteSize(inputFile, inputFileSize, pSectionSize);
 
-    BYTE* resizedInput = malloc(writeSize);
+    BYTE* resizedInput = malloc(*writeSize);
     if (resizedInput == NULL) {
         return NULL;
     }
@@ -79,15 +79,15 @@ BYTE* addSectionToInputFile(BYTE* inputFile, size_t inputFileSize, void* pSectio
     return resizedInput;
 }
 
-BYTE* processFile(FILE* fp, DWORD size) {
-    BYTE* inputFile = malloc(size);
+BYTE* processFile(FILE* fp, DWORD* size) {
+    BYTE* inputFile = malloc(*size);
     if (inputFile == 0) {
         fprintf(stderr, "Could not allocate memory for the input file\n");
         return NULL;
     }
 
-    size_t result = fread(inputFile, sizeof(char), size, fp);
-    if (result != size) {
+    size_t result = fread(inputFile, sizeof(char), *size, fp);
+    if (result != *size) {
         fprintf(stderr, "Failure!\n");
         return NULL;
     }
@@ -111,16 +111,16 @@ BYTE* processFile(FILE* fp, DWORD size) {
     return inputFile;
 }
 
-BYTE* compressAndEncrypt(BYTE* inputFile, size_t fileSize, size_t * returnCompressedSize) {
+BYTE* compressAndEncrypt(BYTE* inputFile, size_t* fileSize, size_t * returnCompressedSize) {
 
-    int max_size = lzav_compress_bound(fileSize);
+    int max_size = lzav_compress_bound(*fileSize);
     BYTE* compressed_buffer = malloc(max_size);
     if (compressed_buffer == NULL) {
         return NULL;
     }
     printf("[+] File compression started!\n");
 
-    int comp_len = lzav_compress_default(inputFile, compressed_buffer, fileSize, max_size);
+    int comp_len = lzav_compress_default(inputFile, compressed_buffer, *fileSize, max_size);
     printf("[+] Compression finished!\n");
     uint32_t key[4] = { 0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210 }; // 128 bit key
     encrypt_payload(compressed_buffer, comp_len, key);
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
                     lockFlag = 1;
 
-                    lockHash = hash(argv[i + 1]);
+                    lockHash = DJB2_hash((const unsigned char*)argv[i + 1], strlen(argv[i + 1]));
                     // let's convert it to a 128 bit key
                     for (int i = 0; i < 4; i++) {
 
@@ -269,14 +269,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    packed_section* packedSection = malloc(packed_size);
+    packed_section* packedSection = malloc(sizeof(packed_section) + packed_size);
     if (packedSection == NULL) {
         return 1;
     }
-    DWORD packedSectionSize = packedSection->packed_size + sizeof(packed_section);
-    if (packedSection == NULL) {
-        return 1;
-    }
+    DWORD packedSectionSize = sizeof(packed_section) + packed_size;
     if (lockFlag == TRUE) {
 
         packedSection->lockFlag = TRUE;
@@ -307,7 +304,7 @@ int main(int argc, char* argv[]) {
         precompiled_unpacker = precompiled_unpacker_x86;
     }
     size_t finalSize = 0;
-    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, finalSize);
+    BYTE* finalFile = addSectionToInputFile(&precompiled_unpacker, stub_size, (LPVOID)packedSection, packedSectionSize, &finalSize);
     outputfp = fopen(outputPath, "wb");
     if (!outputfp) {
         return 1;

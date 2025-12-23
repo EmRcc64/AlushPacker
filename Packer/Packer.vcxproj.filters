@@ -26,6 +26,12 @@
     <ClInclude Include="decrypt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="definitions.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="encryptdebug.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="payload.h">
       <Filter>Source Files</Filter>
     </ClInclude>
